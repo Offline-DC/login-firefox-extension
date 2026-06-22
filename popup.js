@@ -43,31 +43,6 @@ async function hasPrivateWindow() {
 
 // --- buttons -----------------------------------------------------------------
 
-// One-time setup. Firefox forbids extensions from opening privileged about:
-// pages (about:addons is rejected by tabs.create by design), so we can't open
-// the add-on settings for the user. The next-best thing: copy "about:addons" to
-// the clipboard so they just paste it into the address bar and press Enter.
-document.getElementById("openSettings").addEventListener("click", async () => {
-  const hint = document.getElementById("allowHint");
-  try {
-    await navigator.clipboard.writeText("about:addons");
-    if (hint) {
-      hint.style.color = "#188038";
-      hint.textContent =
-        "Copied. Paste it in the address bar (Ctrl/⌘+L) and press Enter. Then on " +
-        "“Dumb Down login helper” click the ··· → Manage → set “Run in Private " +
-        "Windows” to Allow.";
-    }
-  } catch (e) {
-    if (hint) {
-      hint.style.color = "#b00020";
-      hint.textContent =
-        "Type about:addons in the address bar and press Enter. Then on “Dumb Down " +
-        "login helper” click the ··· → Manage → set “Run in Private Windows” to Allow.";
-    }
-  }
-});
-
 // Open the private sign-in window, then let the background page take over (it
 // opens the QR automatically once you've signed in).
 document.getElementById("openIncognito").addEventListener("click", async () => {
