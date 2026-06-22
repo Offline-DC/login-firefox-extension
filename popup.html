@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      width: 320px;
+      font-family: -apple-system, system-ui, sans-serif;
+      padding: 16px 18px 18px;
+      color: #1a1a1a;
+    }
+    h3 { margin: 0 0 8px; font-size: 15px; }
+    p { font-size: 13px; color: #444; margin: 6px 0; line-height: 1.45; }
+    ol { font-size: 13px; color: #444; padding-left: 18px; margin: 6px 0; line-height: 1.5; }
+    .why { font-size: 12px; color: #777; }
+    .hint { font-size: 12px; color: #b00020; margin-top: 8px; }
+    #allow, #start, #waiting, #error { display: none; }
+    #error p { color: #b00020; }
+    button {
+      margin-top: 12px; padding: 8px 14px; border: 0; border-radius: 8px;
+      background: #1a73e8; color: #fff; font-size: 13px; cursor: pointer;
+    }
+    button:active { background: #155ab6; }
+  </style>
+</head>
+<body>
+  <!-- While we check the private-window login. Resolves almost instantly into
+       one of the states below (or straight into the big-QR tab). -->
+  <div id="loading"><p>Checking…</p></div>
+
+  <!-- One-time: extension needs "Run in Private Windows" to read the private
+       window's sign-in. -->
+  <div id="allow">
+    <h3>One-time setup</h3>
+    <p>This helper signs you in inside a <b>private window</b>, and needs
+       permission to see it. Firefox won’t let an add-on open its own settings
+       page, so this part is manual (just once):</p>
+    <ol>
+      <li>Tap <b>Copy “about:addons”</b> below, paste it in the address bar,
+          press Enter</li>
+      <li>On <b>“Dumb Down login helper,”</b> click the <b>···</b> (three dots)
+          → <b>Manage</b></li>
+      <li>Set <b>“Run in Private Windows”</b> to <b>Allow</b></li>
+      <li>Click the extension icon again</li>
+    </ol>
+    <p class="why">Why private? If the login is taken from your normal browser,
+       Google signs your flip phone out about 30&nbsp;minutes later.</p>
+    <button id="openSettings">Copy “about:addons”</button>
+    <p class="hint" id="allowHint"></p>
+  </div>
+
+  <!-- No private window open yet → start the sign-in. -->
+  <div id="start">
+    <h3>Sign in privately</h3>
+    <p>We’ll open a <b>private window</b>. Sign into your Google account there —
+       the QR code then opens <b>automatically</b>.</p>
+    <p class="why">Why private? A login taken from your normal browser gets
+       signed out by Google about 30&nbsp;minutes later. A private sign-in that
+       you close afterwards keeps your flip phone linked.</p>
+    <button id="openIncognito">Open private sign-in window</button>
+  </div>
+
+  <!-- Private window open; background page is watching for the completed
+       sign-in. -->
+  <div id="waiting">
+    <h3>Waiting for sign-in…</h3>
+    <p>Finish signing into Google <b>in the private window</b>. The QR code
+       opens on its own once you’re in — no need to click this icon again.</p>
+    <p class="why">Stay on the page the sign-in lands on (the text-filled page
+       is fine).</p>
+    <button id="focusIncognito">Open the Google sign-in</button>
+  </div>
+
+  <div id="error"><p id="errmsg"></p></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

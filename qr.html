@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Dumb Down — scan to sign in</title>
+    <style>
+      body {
+        font-family: -apple-system, system-ui, sans-serif;
+        text-align: center;
+        padding: 16px 16px 20px;
+        background: #fff;
+        color: #1a1a1a;
+      }
+      h2 {
+        margin: 0 0 4px;
+        font-size: 22px;
+      }
+      p {
+        color: #555;
+        max-width: 680px;
+        margin: 6px auto;
+        font-size: 14px;
+      }
+      #qr {
+        margin-top: 12px;
+      }
+      /* Fit within the viewport on load: limit by BOTH width and the height left
+       under the heading, so a dense (high-version) QR never overflows. */
+      #qr img {
+        image-rendering: pixelated;
+        max-width: 92vw;
+        max-height: 78vh;
+        width: auto;
+        height: auto;
+      }
+      #err {
+        color: #b00020;
+      }
+      #fallback {
+        display: none;
+        max-width: 680px;
+        margin: 20px auto 0;
+      }
+      textarea {
+        width: 100%;
+        height: 80px;
+        box-sizing: border-box;
+        font-family: monospace;
+        font-size: 11px;
+        resize: vertical;
+      }
+      button {
+        margin-top: 10px;
+        padding: 9px 16px;
+        border: 0;
+        border-radius: 8px;
+        background: #1a73e8;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      button:active {
+        background: #155ab6;
+      }
+      /* The "close the private window" step is the one that keeps the phone
+         from being signed out later — make it impossible to miss. */
+      #done {
+        background: #d93025;
+        font-weight: 600;
+      }
+      #done:active {
+        background: #a50e0e;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Scan this with the Dumb Down app</h2>
+    <p>
+      In the app: tap “sign in with desktop” → “scan desktop code,” then point
+      your smart phone’s camera at this screen.
+    </p>
+    <div id="qr"></div>
+    <p id="err"></p>
+    <div id="afterScan">
+      <p>
+        <b>Last step — important:</b> once your flip phone confirms it’s signed
+        in, close the private window. Leaving it open (or signing into
+        messages.google.com with it) will sign your flip phone out within about
+        30 minutes.
+      </p>
+      <button id="done">My phone is signed in — close the private window</button>
+      <span id="autoclose" style="margin-left: 10px; color: #777; font-size: 13px; font-weight: 700"></span>
+      <p id="doneMsg" style="color: #188038"></p>
+    </div>
+    <div id="fallback">
+      <p>Can’t scan it? Copy this and paste it into the app instead:</p>
+      <textarea id="blob" readonly></textarea>
+      <button id="copy">Copy login data</button>
+    </div>
+    <script src="qrcode.min.js"></script>
+    <script src="qr.js"></script>
+  </body>
+</html>
