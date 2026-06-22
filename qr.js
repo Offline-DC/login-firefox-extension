@@ -21,7 +21,7 @@
   }
 
   function showFallback(message) {
-    qrEl.innerHTML = "";
+    qrEl.replaceChildren();
     errEl.textContent = message;
     document.getElementById("blob").value = data;
     document.getElementById("fallback").style.display = "block";
@@ -100,8 +100,13 @@
     var qr = qrcode(0, "L"); // 0 = auto-size, L = max capacity for a big blob
     qr.addData(data);
     qr.make();
-    // Large modules so a phone camera reads it easily; CSS scales it to fill.
-    qrEl.innerHTML = qr.createImgTag(12, 6);
+    // Build the <img> via DOM (createDataURL + appendChild) rather than
+    // innerHTML, so the add-on linter stays clean. Large modules so a phone
+    // camera reads it easily; CSS scales it to fill.
+    var img = document.createElement("img");
+    img.src = qr.createDataURL(12, 6);
+    img.alt = "Sign-in QR code";
+    qrEl.replaceChildren(img);
   } catch (e) {
     showFallback(
       "Login is too large for one QR. Copy the text below and paste it into " +

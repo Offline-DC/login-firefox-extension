@@ -67,10 +67,17 @@ auto-updates it for you.
 
 1. Create an AMO account at <https://addons.mozilla.org/developers/>.
 2. **Submit a New Add-on** → upload a zip of this folder's **contents** (not the
-   folder itself):
+   folder itself). Do NOT use Finder's right-click "Compress" — it adds
+   `__MACOSX/._*` and `.DS_Store` junk that the linter flags. Use one of:
    ```bash
    cd login-firefox-extension
-   zip -r -FS ../dumbdown-firefox.zip . -x '.*' -x '__MACOSX'
+
+   # Recommended — web-ext builds a clean package (no macOS junk):
+   npx web-ext build --overwrite-dest        # → web-ext-artifacts/*.zip
+
+   # Or plain zip, with macOS AppleDouble/.DS_Store files suppressed:
+   COPYFILE_DISABLE=1 zip -r -X ../dumbdown-firefox.zip . \
+     -x '.*' -x '*/.DS_Store' -x '__MACOSX/*'
    ```
 3. Choose **"On this site"** (listed), fill in name/description/icons/screenshots,
    set visibility (you can keep it **Unlisted-on-search / invisible** during a
@@ -79,6 +86,10 @@ auto-updates it for you.
    the review notes: it reads the signed-in Google cookies *solely* to let the
    user transfer their own Messages-for-web login to their own paired device, and
    makes no network requests. Point reviewers at this README.
+   - The manifest declares `data_collection_permissions.required: ["authenticationInfo"]`
+     (required by AMO since Nov 2025). That's accurate: the add-on handles Google
+     login cookies. It still transmits nothing to the developer — the login only
+     leaves the computer when the user's own phone scans the QR.
 5. After approval, share the AMO link. Updates: bump `version` in `manifest.json`
    and upload a new build; Firefox updates users automatically.
 
