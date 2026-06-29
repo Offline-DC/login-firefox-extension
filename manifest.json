@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Dumb Down — Google Messages login helper",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "description": "Sends your Google Messages login to your Dumb Down flip phone via QR code. Nothing leaves your computer except to your phone.",
   "browser_specific_settings": {
     "gecko": {
       "id": "gmessages-login@dumb.co",
       "strict_min_version": "142.0",
+      "update_url": "https://dumb.co/updates.json",
       "data_collection_permissions": {
         "required": ["authenticationInfo"]
       }

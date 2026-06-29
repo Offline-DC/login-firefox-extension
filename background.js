@@ -19,8 +19,16 @@
 
 // Cookies the GAIA / Messages-for-web flow needs. We forward ONLY these (not
 // every google.com cookie) so the blob still fits in a single QR code.
+//
+// Keep this list as small as the Messages session actually needs: every cookie
+// here adds to the QR payload, and a denser (higher-version) QR is harder for a
+// phone camera to read off a monitor. NID is deliberately EXCLUDED — it's
+// Google's preferences/ad-personalization cookie (~200 chars), not part of the
+// auth session, so dropping it shrinks the QR (~v30 → v27) with no effect on
+// sign-in. The phone parses whatever cookies it receives and only requires
+// CRITICAL below, so omitting NID stays compatible with every app version.
 const WANTED = new Set([
-  "SID", "HSID", "SSID", "APISID", "SAPISID", "OSID", "SIDCC", "NID",
+  "SID", "HSID", "SSID", "APISID", "SAPISID", "OSID", "SIDCC",
   "__Secure-1PSID", "__Secure-3PSID",
   "__Secure-1PSIDTS", "__Secure-3PSIDTS",
   "__Secure-1PSIDCC", "__Secure-3PSIDCC",
@@ -35,6 +43,14 @@ const CRITICAL = ["SID", "HSID", "OSID", "SSID", "APISID", "SAPISID"];
 // In-memory guard against double-opens within one event-page wake; the
 // cross-wake guard is browser.storage.session ("qrShown").
 let opening = false;
+// Re-arm flag: if a trigger arrives while a check is mid-flight (opening), we
+// can't just drop it — that trigger might be the OSID write that completes the
+// login, and the in-flight check may have read the cookies a moment too early.
+// Setting this makes tryOpenQR run exactly once more after the current pass, so
+// the final signed-in state is never missed. (This used to be masked by NID,
+// which updated on nearly every request and kept re-firing the cookie trigger;
+// now that NID is no longer watched, we handle the race explicitly.)
+let rerun = false;
 
 /** Locate the private cookie store + a window to open the QR in. In Firefox all
  *  private windows share the "firefox-private" store, but we match the store by
@@ -67,7 +83,9 @@ async function tryOpenQR() {
   // Claim the in-memory lock SYNCHRONOUSLY, before any await. cookies.onChanged
   // fires a burst during sign-in; if we set this after the awaits, every event
   // in the burst slips through and we open a tab each (the "10 tabs" bug).
-  if (opening) return;
+  // A trigger that arrives mid-flight isn't dropped — it re-arms a single
+  // follow-up pass (see `rerun`) so the OSID-completes-login event can't be lost.
+  if (opening) { rerun = true; return; }
   opening = true;
   try {
     const { qrShown } = await browser.storage.session.get("qrShown");
@@ -103,6 +121,14 @@ async function tryOpenQR() {
     }
   } finally {
     opening = false;
+    // If a trigger came in while we were checking, run one more pass now that
+    // the latest cookie writes have landed. Scheduled as a microtask so we don't
+    // recurse on the stack. The qrShown guard makes the extra pass a no-op once
+    // the QR is up, so this can't open duplicates.
+    if (rerun) {
+      rerun = false;
+      Promise.resolve().then(tryOpenQR);
+    }
   }
 }
 
@@ -112,6 +138,21 @@ browser.cookies.onChanged.addListener((info) => {
   if (info.removed) return;
   if (!WANTED.has(info.cookie.name)) return;
   tryOpenQR();
+});
+
+// Definitive completion signal: the sign-in flow's continue URL lands the
+// private window on messages.google.com/web/config (popup.js LOGIN_URL). When
+// that page finishes loading, the account + messages-service session (incl.
+// OSID) is established, so it's the most reliable moment to open the QR — more
+// so than any single cookie write. We need this because dropping NID removed the
+// chatty cookie events that used to re-fire the trigger after sign-in. tab.url
+// is visible here without the `tabs` permission thanks to our google.com host
+// access. Filtered to private-window tabs only.
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (!tab || !tab.incognito) return;
+  if (changeInfo.status !== "complete") return;
+  const url = tab.url || "";
+  if (/^https:\/\/messages\.google\.com\/web\//.test(url)) tryOpenQR();
 });
 
 // The popup kicks this when it opens the sign-in window: clear the guard so a
